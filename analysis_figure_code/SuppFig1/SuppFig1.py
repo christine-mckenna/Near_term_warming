@@ -90,7 +90,8 @@ max_str_CW = 'max = '+'{:.2f}'.format(max_trend)+' ('+max_per+')'
 
 # Plot running trend
 plt.figure(1,figsize=(10,5))
-plt.title('Rolling 20-year GSAT trends',fontsize=20,y=1.02)
+plt.title('Rolling GSAT trends for 20-year segments of observations',\
+          fontsize=20,y=1.02)
 plt.plot(years_Ha[10:-9].astype('int'),temp_trends_Ha,label=\
          'HadCRUT4.6, '+max_str_Ha,color='black')
 plt.plot(years_BE[10:-9].astype('int'),temp_trends_BE,label=\

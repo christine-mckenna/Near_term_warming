@@ -1,111 +1,212 @@
 import numpy as np
-import numpy.ma as npma
 from scipy import stats
 import matplotlib.pyplot as plt
-import baspy as bp
-import fnmatch
 
 """
-Created on Wed Nov 27 18:34 2019
+Created on Weds Mar 11 18:35 2020
 
 @author: Christine McKenna
 
-========================================================================
-Purpose: Plots Supp Fig 8, a pdf of all possible 20-year trends in gsat 
-         for CMIP6 piControl simulations for each model. First detrends
-         the raw gsat time series to remove any long term drift,
-         which could bias 20-year trends (e.g. if positive drift,
-         pdf of 20-year trends likely biased positive).
-         Saves pdf of 20-year trends for models used in Supp Fig 7. 
-========================================================================
+=========================================================================
+Purpose: Plots distributions of near-term warming trends for different
+         emission scenarios in FaIR, with different estimates of IV
+         added for comparison. Supp Fig 8.
+=========================================================================
 """
 
-
 # Required directories
-loaddir_CMIP = 'Priestley-Centre/Near_term_warming/analysis_figure_code/'+\
-               'SuppFig8/saved_arrays'
-savedir = 'Priestley-Centre/Near_term_warming/analysis_figure_code/'+\
-          'SuppFig7/saved_data'
+loaddir = 'Priestley-Centre/Near_term_warming/analysis_figure_code/'+\
+          'SuppFig8/saved_data'
 
 
-### ------ Load in CMIP6 data ------
+### ------ Load in FaIR data ------
 
-# Load models
-models = np.load(loaddir_CMIP+'/models_gtas_CMIP6_piControl.npy')
-
-# Load catalogue so can extract runids
-var = 'tas'
-cat_PI = bp.catalogue(dataset='cmip6',Var=var,Experiment='piControl',\
-                      CMOR='Amon')
-years = np.linspace(1,20,20)
-
-### Process data, one model and RunID at a time
-i = 0
-fig,axs = plt.subplots(6,7,sharex=True,sharey=True,\
-                       figsize=(15,11))
-fig.suptitle('PDF of 20-year GSAT trends in CMIP6 piControl runs',\
-             fontsize=20)
-axs = axs.ravel()
-
-for model in models:
-
-    ## Get data for model
-    filtmod_PI = cat_PI[cat_PI['Model'] == model]
-
-    ## Only keep r1i1p1f?
-    runids_PI = np.unique(filtmod_PI['RunID'])
-    runids_PI = fnmatch.filter(runids_PI,'r1i1p1f?')
-
-    ## Get data for each RunID
-    for runid in runids_PI: 
-
-        ## Load gsat data
-        gsat_tmp = np.load(loaddir_CMIP+'/gtas_'+model+'_'+runid+\
-                           '_CMIP6_piControl.npy')
-        ny = len(gsat_tmp)
-
-        ## Remove any drift
-        [m,c,_,_,_] = stats.linregress(np.linspace(0,ny-1,ny),gsat_tmp)
-        gsat_lin = m*np.linspace(0,ny-1,ny)+c
-        gsat = gsat_tmp - gsat_lin
-
-        ## Calculate trends
-        gsat_trends = np.zeros([ny-20])
-        for y in xrange(0,ny-20):
-            [m,_,_,_,_] = stats.linregress(years,gsat[y:y+20])
-            gsat_trends[y] = m*10
-
-        ## If model used in Supp Fig 7 save pdf of 20y trends
-        if (model == 'BCC-CSM2-MR') or (model == 'MIROC-ES2L'):
-            np.save(savedir+'/gsat_20ytrends_CMIP6_piControl_'+\
-                    model+'.npy',gsat_trends) 
-
-        
-        ### ------ Plot results ------
-
-        ### Plot individual models      
-        axs[i].hist(gsat_trends,density=True)
-        axs[i].set_title(model,fontsize=13) 
-        axs[i].plot(np.zeros([2]),[0,11],'grey',linewidth=1)
-        axs[i].plot(np.ones([2])*(-0.075),[0,11],'black',\
-                    linewidth=1,linestyle='--')
-        axs[i].plot(np.ones([2])*(0.072),[0,11],'black',\
-                    linewidth=1,linestyle='--')
-        axs[i].plot(np.ones([2])*(-0.084),[0,11],'black',\
-                    linewidth=1,linestyle='--')
-        axs[i].plot(np.ones([2])*(0.094),[0,11],'black',\
-                    linewidth=1,linestyle='--')
-        axs[i].tick_params(labelsize=13)
-        i += 1
+trends_Had = np.load(loaddir+'/stats_trend_f_HadOSTIV.npy',\
+                     allow_pickle='TRUE').item()
+trends_CW = np.load(loaddir+'/stats_trend_f_CWIV.npy',\
+                    allow_pickle='TRUE').item()
+trends_Be = np.load(loaddir+'/stats_trend_f_BeIV.npy',\
+                    allow_pickle='TRUE').item()
+trends_highC = np.load(loaddir+'/stats_trend_f_BCC-CSM2-MR_IV.npy',\
+                       allow_pickle='TRUE').item()
+trends_lowC = np.load(loaddir+'/stats_trend_f_MIROC-ES2L_IV.npy',\
+                      allow_pickle='TRUE').item()
+minmax_Had = np.load(loaddir+'/minmax_trend_f_HadOSTIV.npy')
+minmax_CW = np.load(loaddir+'/minmax_trend_f_CWIV.npy')
+minmax_Be = np.load(loaddir+'/minmax_trend_f_BeIV.npy')
+minmax_highC = np.load(loaddir+'/minmax_trend_f_BCC-CSM2-MRIV.npy')
+minmax_lowC = np.load(loaddir+'/minmax_trend_f_MIROC-ES2LIV.npy')
 
 
-fig.text(0.5,0.02,'$^{\circ}$C / decade',ha='center',\
-         va='center',fontsize=18)
-fig.text(0.02,0.5,'Probability density',ha='center',va='center',\
-         rotation='vertical',fontsize=18)
-axs[i-1].set_xlim([-0.3,0.3])
-axs[i-1].set_ylim([0,11])
-plt.subplots_adjust(top=0.9,bottom=0.07,left=0.07,right=0.97,\
-                    wspace=0.17,hspace=0.27)
+
+### ----------------------------------
+###            Plot trends
+### ----------------------------------
+
+colors=['grey','green','dodgerblue','orange','sienna']
+
+
+### Obs estimates
+
+fig1,[ax1,ax2,ax3] = plt.subplots(1,3,figsize=(17,9),sharey=True)
+plt.suptitle('2021-2040 GSAT trends from FaIR plus IV',fontsize=23)
+plt.gcf().text(0.005,0.9,'$\\bf{a}$ Observation based IV estimates',fontsize=22)
+
+# HadOST
+ax1.set_title('$\\bf{i}$ HadOST',y=1.01,fontsize=20,loc='left')
+bplot1 = ax1.bxp([trends_Had['N'],trends_Had['19'],\
+                 trends_Had['26'],trends_Had['70'],\
+                 trends_Had['85']],\
+                 positions=[1.0,1.8,2.6,3.4,4.2],\
+                 patch_artist=True,flierprops=dict(marker='.'),\
+                 widths=np.ones([5])*0.25)
+plt.setp(bplot1['medians'], color='k')
+x=0
+for patch in bplot1['boxes']:
+    patch.set_facecolor(colors[x])
+    x += 1
+ax1.scatter([[1.0,1.0],[1.8,1.8],[2.6,2.6],[3.4,3.4],[4.2,4.2]],\
+            minmax_Had,marker='x',s=25,c='k')
+ax1.set_xlim([0.5,4.7])
+ax1.set_xticks([1.0,1.8,2.6,3.4,4.2])
+ax1.xaxis.set_ticklabels(['NDC-\nlike','Below\n1.5$^{\circ}$C',\
+                          'Below\n2$^{\circ}$C',\
+                          'Aver-\nage',\
+                          'Worst\ncase'])
+ax1.set_ylim([-0.36,1.05])
+ax1.set_yticks([-0.2,0,0.2,0.4,0.6,0.8,1.0])
+ax1.set_ylabel('$^{\circ}$C / decade',fontsize=19)
+ax1.tick_params(labelsize=19)
+ax1.fill_between([0.5,4.7],0.254,0.287,edgecolor='',facecolor='grey',\
+                 alpha=0.3,zorder=0)
+ax1.plot([0.5,4.7],[0.265,0.265],color='black',linewidth=1,zorder=0)
+ax1.plot([0.5,4.7],[0,0],'--',color='black',linewidth=1,zorder=0)
+
+# BE
+ax2.set_title('$\\bf{ii}$ Berkeley Earth',y=1.01,fontsize=20,loc='left')
+bplot2 = ax2.bxp([trends_Be['N'],trends_Be['19'],\
+                 trends_Be['26'],trends_Be['70'],\
+                 trends_Be['85']],\
+                 positions=[1.0,1.8,2.6,3.4,4.2],\
+                 patch_artist=True,flierprops=dict(marker='.'),\
+                 widths=np.ones([5])*0.25)
+plt.setp(bplot2['medians'], color='k')
+x=0
+for patch in bplot2['boxes']:
+    patch.set_facecolor(colors[x])
+    x += 1
+ax2.scatter([[1.0,1.0],[1.8,1.8],[2.6,2.6],[3.4,3.4],[4.2,4.2]],\
+            minmax_Be,marker='x',s=25,c='k')
+ax2.set_xlim([0.5,4.7])
+ax2.set_xticks([1.0,1.8,2.6,3.4,4.2])
+ax2.xaxis.set_ticklabels(['NDC-\nlike','Below\n1.5$^{\circ}$C',\
+                          'Below\n2$^{\circ}$C',\
+                          'Aver-\nage',\
+                          'Worst\ncase'])
+ax2.tick_params(labelsize=19)
+ax2.fill_between([0.5,4.7],0.254,0.287,edgecolor='',facecolor='grey',\
+                 alpha=0.3,zorder=0)
+ax2.plot([0.5,4.7],[0.265,0.265],color='black',linewidth=1,zorder=0)
+ax2.plot([0.5,4.7],[0,0],'--',color='black',linewidth=1,zorder=0)
+
+# CWv2
+ax3.set_title('$\\bf{iii}$ Cowtan-Way v2',y=1.01,fontsize=20,loc='left')
+bplot3 = ax3.bxp([trends_CW['N'],trends_CW['19'],\
+                 trends_CW['26'],trends_CW['70'],\
+                 trends_CW['85']],\
+                 positions=[1.0,1.8,2.6,3.4,4.2],\
+                 patch_artist=True,flierprops=dict(marker='.'),\
+                 widths=np.ones([5])*0.25)
+plt.setp(bplot3['medians'], color='k')
+x=0
+for patch in bplot3['boxes']:
+    patch.set_facecolor(colors[x])
+    x += 1
+ax3.scatter([[1.0,1.0],[1.8,1.8],[2.6,2.6],[3.4,3.4],[4.2,4.2]],\
+            minmax_CW,marker='x',s=25,c='k')
+ax3.set_xlim([0.5,4.7])
+ax3.set_xticks([1.0,1.8,2.6,3.4,4.2])
+ax3.xaxis.set_ticklabels(['NDC-\nlike','Below\n1.5$^{\circ}$C',\
+                          'Below\n2$^{\circ}$C',\
+                          'Aver-\nage',\
+                          'Worst\ncase'])
+ax3.tick_params(labelsize=19)
+ax3.fill_between([0.5,4.7],0.254,0.287,edgecolor='',facecolor='grey',\
+                 alpha=0.3,zorder=0)
+ax3.plot([0.5,4.7],[0.265,0.265],color='black',linewidth=1,zorder=0)
+ax3.plot([0.5,4.7],[0,0],'--',color='black',linewidth=1,zorder=0)
+
+plt.subplots_adjust(top=0.83,bottom=0.08,left=0.06,right=0.9,wspace=0.1)
+
+
+### CMIP6 estimates
+
+fig2,[ax1,ax2,ax3] = plt.subplots(1,3,figsize=(17,9),sharey=True)
+plt.suptitle('2021-2040 GSAT trends from FaIR plus IV',fontsize=23)
+plt.gcf().text(0.005,0.9,'$\\bf{b}$ CMIP6 piControl run IV estimates',fontsize=22)
+
+# Low var
+ax1.set_title('$\\bf{i}$ MIROC-ES2L',y=1.01,fontsize=20,loc='left')
+bplot1 = ax1.bxp([trends_lowC['N'],trends_lowC['19'],\
+                 trends_lowC['26'],trends_lowC['70'],\
+                 trends_lowC['85']],\
+                 positions=[1.0,1.8,2.6,3.4,4.2],\
+                 patch_artist=True,flierprops=dict(marker='.'),\
+                 widths=np.ones([5])*0.25)
+plt.setp(bplot1['medians'], color='k')
+x=0
+for patch in bplot1['boxes']:
+    patch.set_facecolor(colors[x])
+    x += 1
+ax1.scatter([[1.0,1.0],[1.8,1.8],[2.6,2.6],[3.4,3.4],[4.2,4.2]],\
+            minmax_lowC,marker='x',s=25,c='k')
+ax1.set_xlim([0.5,4.7])
+ax1.set_xticks([1.0,1.8,2.6,3.4,4.2])
+ax1.xaxis.set_ticklabels(['NDC-\nlike','Below\n1.5$^{\circ}$C',\
+                          'Below\n2$^{\circ}$C',\
+                          'Aver-\nage',\
+                          'Worst\ncase'])
+ax1.set_ylim([-0.38,1.05])
+ax1.set_yticks([-0.2,0,0.2,0.4,0.6,0.8,1.0])
+ax1.set_ylabel('$^{\circ}$C / decade',fontsize=19)
+ax1.tick_params(labelsize=19)
+ax1.fill_between([0.5,4.7],0.254,0.287,edgecolor='',facecolor='grey',\
+                 alpha=0.3,zorder=0)
+ax1.plot([0.5,4.7],[0.265,0.265],color='black',linewidth=1,zorder=0)
+ax1.plot([0.5,4.7],[0,0],'--',color='black',linewidth=1,zorder=0)
+
+# High var
+ax2.set_title('$\\bf{ii}$ BCC-CSM2-MR',y=1.01,fontsize=20,loc='left')
+bplot2 = ax2.bxp([trends_highC['N'],trends_highC['19'],\
+                 trends_highC['26'],trends_highC['70'],\
+                 trends_highC['85']],\
+                 positions=[1.0,1.8,2.6,3.4,4.2],\
+                 patch_artist=True,flierprops=dict(marker='.'),\
+                 widths=np.ones([5])*0.25)
+plt.setp(bplot2['medians'], color='k')
+x=0
+for patch in bplot2['boxes']:
+    patch.set_facecolor(colors[x])
+    x += 1
+ax2.scatter([[1.0,1.0],[1.8,1.8],[2.6,2.6],[3.4,3.4],[4.2,4.2]],\
+            minmax_highC,marker='x',s=25,c='k')
+ax2.set_xlim([0.5,4.7])
+ax2.set_xticks([1.0,1.8,2.6,3.4,4.2])
+ax2.xaxis.set_ticklabels(['NDC-\nlike','Below\n1.5$^{\circ}$C',\
+                          'Below\n2$^{\circ}$C',\
+                          'Aver-\nage',\
+                          'Worst\ncase'])
+ax2.tick_params(labelsize=19)
+ax2.fill_between([0.5,4.7],0.254,0.287,edgecolor='',facecolor='grey',\
+                 alpha=0.3,zorder=0)
+ax2.plot([0.5,4.7],[0.265,0.265],color='black',linewidth=1,zorder=0)
+ax2.plot([0.5,4.7],[0,0],'--',color='black',linewidth=1,zorder=0)
+ax3.set_visible(False)
+
+plt.subplots_adjust(top=0.83,bottom=0.08,left=0.06,right=0.9,wspace=0.1)
+
+# Show (note Inkscape is then used to combine these Figures into one,
+# smarten them up, and to add a legend)
 plt.show()
+
 

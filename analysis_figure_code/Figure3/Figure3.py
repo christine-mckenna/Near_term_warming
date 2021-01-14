@@ -119,51 +119,67 @@ for t_l in xrange(10,51):
 ###            Plot trends
 ### ----------------------------------
 
-trend_lengths = np.linspace(10,50,41) + 2020
+trend_lengths = np.linspace(10,50,41)
+end_years = trend_lengths + 2020
 
-fig,ax1 = plt.subplots(1,1,figsize=(7.08,5.5))
-plt.suptitle('GSAT trends from FaIR starting in 2021\nfor '+\
-             'different end years',fontsize=13)
+fig,ax1 = plt.subplots(1,1,figsize=(7.08,5))
+ax1.set_title('GSAT trends from FaIR starting in 2021\nfor '+\
+              'different end years or trend lengths',y=1.02,fontsize=13)
 plt.rcParams['axes.linewidth']=0.62
 
 # Ranges
-ax1.fill_between(trend_lengths,gsat_stats_f_85[:,0],gsat_stats_f_85[:,2],
+ax1.fill_between(end_years,gsat_stats_f_85[:,0],gsat_stats_f_85[:,2],
                  edgecolor='',facecolor='sienna',alpha=0.3,zorder=0)
-ax1.fill_between(trend_lengths,gsat_stats_f_70[:,0],gsat_stats_f_70[:,2],
+ax1.fill_between(end_years,gsat_stats_f_70[:,0],gsat_stats_f_70[:,2],
                  edgecolor='',facecolor='orange',alpha=0.3,zorder=0)
-ax1.fill_between(trend_lengths,gsat_stats_f_26[:,0],gsat_stats_f_26[:,2],
+ax1.fill_between(end_years,gsat_stats_f_26[:,0],gsat_stats_f_26[:,2],
                  edgecolor='',facecolor='dodgerblue',alpha=0.3,zorder=0)
-ax1.fill_between(trend_lengths,gsat_stats_f_19[:,0],gsat_stats_f_19[:,2],
+ax1.fill_between(end_years,gsat_stats_f_19[:,0],gsat_stats_f_19[:,2],
                  edgecolor='',facecolor='green',alpha=0.3,zorder=0)
-ax1.fill_between(trend_lengths,obs_lower,obs_upper,edgecolor='',\
+ax1.fill_between(end_years,obs_lower,obs_upper,edgecolor='',\
                  facecolor='black',alpha=0.2,zorder=2)
 
 # Medians
-ax1.plot(trend_lengths,obs_mean,color='black',label='Max trend in obs',\
-         zorder=2)
-ax1.plot(trend_lengths,gsat_stats_f_85[:,1],label='Worst case no mitigation',\
+ax1.plot(end_years,gsat_stats_f_85[:,1],label='Worst case no\nmitigation',\
          color='sienna',zorder=1)
-ax1.plot(trend_lengths,gsat_stats_f_70[:,1],label='Average no mitigation',\
+ax1.plot(end_years,gsat_stats_f_70[:,1],label='Average no\nmitigation',\
          color='orange',zorder=1)
-ax1.plot(trend_lengths,gsat_stats_f_26[:,1],label='Below 2$^{\circ}$C',\
+ax1.plot(end_years,gsat_stats_f_26[:,1],label='Below 2$^{\circ}$C',\
          color='dodgerblue',zorder=1)
-ax1.plot(trend_lengths,gsat_stats_f_19[:,1],label='Below 1.5$^{\circ}$C',\
+ax1.plot(end_years,gsat_stats_f_19[:,1],label='Below 1.5$^{\circ}$C',\
          color='green',zorder=1)
+ax1.plot(end_years,obs_mean,color='black',label='Max trend in obs',\
+         zorder=2)
 
 # Plot params
 ax1.plot([2040.,2040.],[-0.05,0.63],'-',color='grey',linewidth=0.75)
-ax1.plot(trend_lengths,np.zeros([41]),'--',color='black',linewidth=0.75)
-ax1.set_xlabel('End year',fontsize=10,labelpad=8)
+ax1.plot(end_years,np.zeros([41]),'--',color='black',linewidth=0.75)
+ax1.set_xlabel('End year',fontsize=10)
 ax1.set_ylabel('$^{\circ}$C / decade',fontsize=10,labelpad=9)
 ax1.set_xlim([2030,2070])
 ax1.set_ylim([-0.05,0.55])
 ax1.set_xticks([2030,2040,2050,2060,2070])
 ax1.set_xticklabels(['-2030','-2040','-2050','-2060','-2070'])
 ax1.tick_params(labelsize=10)
-ax1.legend(loc='lower center',ncol=2,fontsize=10,\
-           bbox_to_anchor=(0.5,-0.43))
-plt.subplots_adjust(top=0.88,bottom=0.29,left=0.2,right=0.8)
+ax1.legend(loc='center right',fontsize=10,labelspacing=0.7,\
+           bbox_to_anchor=(1.465,0.5))
 
-# show
+# Second x-axis
+ax2 = ax1.twiny()
+ax2.xaxis.set_ticks_position('bottom')
+ax2.xaxis.set_label_position('bottom')
+ax2.spines['bottom'].set_position(('axes',-0.18))
+ax2.set_frame_on(True)
+ax2.patch.set_visible(False)
+for sp in ax2.spines.itervalues():
+    sp.set_visible(False)
+ax2.spines['bottom'].set_visible(True)
+ax2.set_xlim([10,50])
+ax2.set_xticks([10,20,30,40,50])
+ax2.set_xticklabels([10,20,30,40,50])
+ax2.set_xlabel('Trend length (years)',fontsize=10)
+
+# Adjust spacing and show
+plt.subplots_adjust(top=0.88,bottom=0.22,left=0.1,right=0.7)
 plt.show()
 

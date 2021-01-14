@@ -116,7 +116,7 @@ gsat_trend_f_var_85 = np.reshape(gsat_trend_f_var_85,nt_f*nt_var)
 ### -------------- FaIR and 2000-2019 in obs -----------------
 
 # Create obs array to minus from FaIR trends
-obs = np.array([0.224,0.254,0.192,0.207]) # BE, GI, HadOST, CW 
+obs = np.array([0.224,0.254,0.192,0.207]) # BE, GI, HadCRUT, CW 
 obs_re1 = np.zeros(nt_f*nt_var)
 obs_re2 = np.zeros(nt_f*nt_var)
 obs_re3 = np.zeros(nt_f*nt_var)

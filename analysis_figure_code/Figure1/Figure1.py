@@ -220,7 +220,7 @@ colors=['grey','green','dodgerblue','lightblue','orange',\
 fig1,[ax1,ax2] = plt.subplots(1,2,figsize=(13,8))
 
 # GSAT trend
-ax1.set_title('(a) 2021-2040 GSAT trend',y=1.02,fontsize=20)
+ax1.set_title('$\\bf{a}$ 2021-2040 GSAT trend',y=1.02,fontsize=20)
 bplot1 = ax1.bxp([stats_trend_f['N'],stats_trend_f['19'],\
                  stats_trend_f['26'],stats_trend_c['26'],\
                  stats_trend_f['70'],stats_trend_c['70'],\
@@ -256,7 +256,7 @@ ax1.set_ylabel('$^{\circ}$C / decade',fontsize=17)
 ax1.tick_params(labelsize=17)
 
 # GSAT anomaly
-ax2.set_title('(b) 2021-2040 GSAT anomaly',y=1.02,fontsize=20)
+ax2.set_title('$\\bf{b}$ 2021-2040 GSAT anomaly',y=1.02,fontsize=20)
 bplot2 = ax2.bxp([stats_anom_f['N'],stats_anom_f['19'],\
                  stats_anom_f['26'],stats_anom_c['26'],\
                  stats_anom_f['70'],stats_anom_c['70'],\
